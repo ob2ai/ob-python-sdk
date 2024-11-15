@@ -1,131 +1,84 @@
-# OpsBeaconClient Python Library
-
-## Overview
-
-`OpsBeaconClient` is a Python library that provides a simple interface to interact with the OpsBeacon API. This client allows you to manage commands, connections, users, groups, files, and applications within an OpsBeacon workspace.
+# OpsBeacon Python Client
 
 ## Installation
 
-To use `OpsBeaconClient`, you need to have Python installed along with the `requests` library. Install `requests` with:
+To install the OpsBeacon Python client, you can use pip:
 
-```bash
-pip install requests
+```
+pip install opsbeacon-client
 ```
 
-## Getting Started
+## Usage
 
-### Initialize the Client
-
-To start using the `OpsBeaconClient`, instantiate the client with your API domain and API token:
+To use the OpsBeacon client, you need to have your API domain and API token. You can obtain these from the OpsBeacon dashboard.
 
 ```python
 from opsbeacon_client import OpsBeaconClient
 
-client = OpsBeaconClient(api_domain="api.yourdomain.com", api_token="your_api_token")
-```
+client = OpsBeaconClient(api_domain="your-api-domain.opsbeacon.com", api_token="your-api-token")
 
-## API Methods
-
-### Commands
-
-- **Fetch commands**: `client.commands()`
-
-  commands = client.commands()
-
-### Connections
-
-- **Fetch connections**: `client.connections()`
-
-  connections = client.connections()
-
-### Users
-
-- **Fetch users**: `client.users()`
-
-  users = client.users()
-
-- **Add user**: `client.add_user(user: Dict[str, Any])`
-
-  new_user = {"username": "jdoe", "email": "jdoe@example.com"}
-  success = client.add_user(new_user)
-
-- **Delete user**: `client.delete_user(user_id: str)`
-
-  success = client.delete_user("user_id_123")
-
-### Groups
-
-- **Fetch groups**: `client.groups()`
-
-  groups = client.groups()
-
-- **Add group**: `client.add_group(group: Dict[str, Any])`
-
-  new_group = {"name": "admin_group", "permissions": ["read", "write"]}
-  success = client.add_group(new_group)
-
-- **Delete group**: `client.delete_group(group_name: str)`
-
-  success = client.delete_group("admin_group")
-
-### File Management
-
-- **Upload file**: `client.file_upload(file_content: str, file_name: str)`
-
-  success = client.file_upload(file_content="data", file_name="data.csv")
-
-- **Download file**: `client.file_download(file_name: str, destination_path: str)`
-
-  success = client.file_download("report.csv", destination_path="/path/to/save")
-
-### Command Execution
-
-- **Run command**: `client.run(command_text: str, connection: str, command: str, args: str)`
-
-  response = client.run(command_text="ls -l")
-
-### Applications
-
-- **Create or Update an Application**: `client.create_or_update_app(app_json: Dict[str, Any])`
-
-  app_details = {"name": "MyApp", "version": "1.0"}
-  response = client.create_or_update_app(app_details)
-
-## Error Handling
-
-The library catches `requests.RequestException` errors and outputs them to the console. Each method returns `False` or an empty list if the request fails. Make sure to handle these cases in your implementation.
-
-## Example Usage
-
-```python
-from opsbeacon_client import OpsBeaconClient
-```
-
-# Initialize the client
-```python
-client = OpsBeaconClient(api_domain="api.yourdomain.com", api_token="your_api_token")
-```
-
-# Fetch and print commands
-```python
+# Fetch a list of commands
 commands = client.commands()
-print("Commands:", commands)
-```
+print(commands)
+
+# Fetch a list of connections
+connections = client.connections()
+print(connections)
+
+# Fetch a list of users
+users = client.users()
+print(users)
 
 # Add a new user
-```python
-new_user = {"username": "jdoe", "email": "jdoe@example.com"}
-success = client.add_user(new_user)
-if success:
-    print("User added successfully.")
-else:
-    print("Failed to add user.")
+new_user = {
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+}
+client.add_user(new_user)
+
+# Delete a user
+client.delete_user("user-id")
+
+# Fetch a list of groups
+groups = client.groups()
+print(groups)
+
+# Add a new group
+new_group = {
+    "name": "Admin Group",
+    "description": "Group for admin users"
+}
+client.add_group(new_group)
+
+# Delete a group
+client.delete_group("admin-group")
+
+# Upload a file
+client.file_upload(file_content="some,csv,data", file_name="example.csv")
+
+# Download a file
+client.file_download("example.csv", "downloaded_file.csv")
+
+# Execute a command
+result = client.run(command="restart-server", connection="server-connection", args="--force")
+print(result)
 ```
 
-## License
+## API Reference
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+The OpsBeacon Python client provides the following methods:
 
-## Contributing
+- `commands()`: Fetch a list of available commands in the workspace.
+- `connections()`: Retrieve a list of connections in the workspace.
+- `users()`: Fetch a list of users in the workspace.
+- `add_user(user: Dict[str, Any])`: Add a new user to the workspace.
+- `delete_user(user_id: str)`: Delete a user from the workspace by user ID.
+- `groups()`: Fetch a list of groups defined in the workspace.
+- `add_group(group: Dict[str, Any])`: Add a new group to the workspace.
+- `delete_group(group_name: str)`: Delete a group from the workspace by group name.
+- `file_upload(file_content: str = None, file_name: str = None, input_file: str = None)`: Upload a file to the OpsBeacon workspace.
+- `get_file_download_url(file_id: str)`: Get a download URL for a specified file.
+- `file_download(file_name: str, destination_path: str = None)`: Download a file from OpsBeacon and save it to the specified destination.
+- `run(command_text: str = "", connection: str = "", command: str = "", args: str = "")`: Execute a command in the OpsBeacon workspace.
 
-Feel free to submit issues or pull requests to improve this library.
+Please refer to the docstrings in the code for more detailed information about each method.
