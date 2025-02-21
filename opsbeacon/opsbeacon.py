@@ -274,3 +274,11 @@ class OpsBeaconClient:
             raise ValueError("Invalid input for command execution")
         
         url = f'https://{self.api_domain}/trigger/v1/api'
+
+        try:
+            response = requests.post(url, headers=self.headers, json=body)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Failed to execute command: {e}")
+            return {"error": str(e)}
