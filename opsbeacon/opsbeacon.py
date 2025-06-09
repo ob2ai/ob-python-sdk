@@ -1,5 +1,6 @@
 import requests
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
+import shlex
 
 class OpsBeaconClient:
     """
@@ -253,7 +254,8 @@ class OpsBeaconClient:
 
         return True
 
-    def run(self, command_text: str = "", connection: str = "", command: str = "", args: str = "") -> Dict[str, Any]:
+    def run(self, command_text: str = "", connection: str = "", command: str = "", 
+            args: Union[List[str], str] = "", debug: bool = False) -> Dict[str, Any]:
         """
         Execute a command in the OpsBeacon workspace.
 
@@ -261,7 +263,8 @@ class OpsBeaconClient:
             command_text (str, optional): The command line text.
             connection (str, optional): Connection identifier.
             command (str, optional): Command name.
-            args (str, optional): Arguments for the command.
+            args (Union[List[str], str], optional): Arguments for the command. Can be a list of strings or a space-separated string.
+            debug (bool, optional): Enable debug output.
 
         Returns:
             Dict[str, Any]: The command execution response.
@@ -269,16 +272,37 @@ class OpsBeaconClient:
         if command_text:
             body = {"commandLine": command_text}
         elif command and connection:
-            body = {"command": command, "connection": connection, "arguments": args}
+            # Convert string args to list if needed
+            if isinstance(args, str):
+                # Split by spaces but respect quoted arguments
+                args_list = shlex.split(args) if args else []
+            else:
+                args_list = args
+                
+            body = {"command": command, "connection": connection, "arguments": args_list}
         else:
             raise ValueError("Invalid input for command execution")
         
         url = f'https://{self.api_domain}/trigger/v1/api'
 
         try:
+            if debug:
+                print(f"Debug: POST {url}")
+                print(f"Debug: Headers: {self.headers}")
+                print(f"Debug: Body: {body}")
+            
             response = requests.post(url, headers=self.headers, json=body)
+            
+            if debug:
+                print(f"Debug: Status Code: {response.status_code}")
+                print(f"Debug: Response Headers: {dict(response.headers)}")
+                print(f"Debug: Response Text: {response.text}")
+            
             response.raise_for_status()
             return response.json()
+        except requests.json.JSONDecodeError as e:
+            print(f"Failed to decode JSON response: {e}")
+            return {"error": f"JSON decode error: {str(e)}", "response": response.text}
         except requests.RequestException as e:
             print(f"Failed to execute command: {e}")
             return {"error": str(e)}

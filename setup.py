@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="opsbeacon",
-    version="1.0.1",
+    version="1.1.0",
     author="Cihan Sahin",
     author_email="cihan@opsbeacon.com",
     description="OpsBeacon python client library to interact with the OpsBeacon API",
@@ -13,6 +13,9 @@ setup(
     install_requires=[
         "requests>=2.25.1"
     ],
+    extras_require={
+        "cli": ["python-dotenv>=1.1.0"]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -20,4 +23,3 @@ setup(
     ],
     python_requires=">=3.11",
 )
-
