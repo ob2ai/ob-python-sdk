@@ -29,10 +29,16 @@ To install the OpsBeacon Python client, you can use pip:
 pip install opsbeacon
 ```
 
-Or for development:
+Or install directly from GitHub:
 
 ```bash
-git clone https://github.com/OpsBeaconInc/ob-python-sdk.git
+pip install git+https://github.com/ob2ai/ob-python-sdk.git
+```
+
+For development:
+
+```bash
+git clone https://github.com/ob2ai/ob-python-sdk.git
 cd ob-python-sdk
 pip install -e .
 ```
@@ -814,4 +820,4 @@ client = OpsBeaconClient(
 For additional support:
 - Documentation: https://docs.opsbeacon.com
 - Email: support@opsbeacon.com
-- GitHub Issues: https://github.com/OpsBeaconInc/ob-python-sdk/issues
+- GitHub Issues: https://github.com/ob2ai/ob-python-sdk/issues
