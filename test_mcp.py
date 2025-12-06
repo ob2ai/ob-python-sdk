@@ -4,16 +4,18 @@ Quick test script for MCP trigger operations.
 """
 
 import os
-import sys
-from datetime import datetime
 import random
 import string
+import sys
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 # Add current directory to path for development
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from opsbeacon import OpsBeaconClient
+
 
 def generate_unique_name(prefix="test-mcp"):
     """Generate a unique name using timestamp and random suffix."""
@@ -24,20 +26,20 @@ def generate_unique_name(prefix="test-mcp"):
 def test_mcp_operations():
     # Load environment variables
     load_dotenv()
-    
+
     api_domain = os.getenv('OPSBEACON_API_DOMAIN', 'api.console.opsbeacon.com')
     api_token = os.getenv('OPSBEACON_API_TOKEN')
-    
+
     if not api_token:
         print("Error: OPSBEACON_API_TOKEN environment variable is required")
         print("Please set it in your .env file or environment")
         return False
-    
+
     print(f"Testing MCP operations with domain: {api_domain}")
     print("=" * 50)
-    
+
     client = OpsBeaconClient(api_domain, api_token)
-    
+
     # Test 1: List all triggers
     print("\n1. Testing triggers() method:")
     try:
@@ -48,7 +50,7 @@ def test_mcp_operations():
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         return False
-    
+
     # Test 2: List MCP triggers
     print("\n2. Testing mcp_triggers() method:")
     try:
@@ -59,7 +61,7 @@ def test_mcp_operations():
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         return False
-    
+
     # Test 3: Get a specific trigger (if any exist)
     if mcp_triggers:
         print("\n3. Testing get_trigger() method:")
@@ -74,7 +76,7 @@ def test_mcp_operations():
             print(f"     - Tools: {len(tools)}")
         except Exception as e:
             print(f"   ✗ Failed: {e}")
-    
+
     # Test 4: Get MCP URL
     if mcp_triggers:
         print("\n4. Testing get_mcp_trigger_url() method:")
@@ -88,12 +90,12 @@ def test_mcp_operations():
                 print(f"   ⚠ No URL found for '{trigger_name}'")
         except Exception as e:
             print(f"   ✗ Failed: {e}")
-    
+
     # Test 5: Create a test trigger
     print("\n5. Testing create_mcp_trigger() method:")
     test_trigger_name = generate_unique_name("test-mcp")
     print(f"   Creating test trigger: {test_trigger_name}")
-    
+
     try:
         # Create a minimal test trigger with disk_usage tool
         result = client.create_mcp_trigger(
@@ -111,18 +113,18 @@ def test_mcp_operations():
                 }
             }]
         )
-        
+
         if result.get('success'):
             print(f"   ✓ Successfully created trigger '{test_trigger_name}'")
             if result.get('url'):
                 print(f"     - URL: {result['url']}")
             if result.get('apiToken'):
                 print(f"     - Token: {result['apiToken']}")  # Full token for testing
-            
+
             # Clean up - delete the test trigger
-            print(f"   Cleaning up - deleting test trigger...")
+            print("   Cleaning up - deleting test trigger...")
             if client.delete_trigger(test_trigger_name):
-                print(f"   ✓ Successfully deleted test trigger")
+                print("   ✓ Successfully deleted test trigger")
             else:
                 print(f"   ⚠ Failed to delete test trigger '{test_trigger_name}'")
         elif result.get('error'):
@@ -131,7 +133,7 @@ def test_mcp_operations():
             print(f"   ⚠ Unexpected response: {result}")
     except Exception as e:
         print(f"   ✗ Failed: {e}")
-    
+
     print("\n" + "=" * 50)
     print("Basic MCP tests completed successfully!")
     return True

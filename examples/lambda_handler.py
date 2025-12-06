@@ -18,10 +18,10 @@ def lambda_handler(ob, event):
         "commandLine": "restart-service prod-server-1 --service nginx --force"
     }
     """
-    
+
     # Extract parameters from event
     command_line = event.get("commandLine")
-    
+
     if command_line:
         # Execute using command line syntax
         response = ob.run(command_text=command_line)
@@ -30,19 +30,19 @@ def lambda_handler(ob, event):
         command = event.get("command", "")
         connection = event.get("connection", "")
         arguments = event.get("arguments", [])
-        
+
         if not command or not connection:
             return {
                 "statusCode": 400,
                 "body": {"error": "Missing required parameters: command and connection"}
             }
-        
+
         response = ob.run(
             command=command,
             connection=connection,
             args=arguments  # Note: parameter is 'args' not 'arguments'
         )
-    
+
     # Check if execution was successful
     if "error" in response:
         return {
@@ -52,7 +52,7 @@ def lambda_handler(ob, event):
                 "message": "Command execution failed"
             }
         }
-    
+
     # Check if the API returned success: false
     if response.get("success") is False:
         return {
@@ -63,7 +63,7 @@ def lambda_handler(ob, event):
                 "result": response
             }
         }
-    
+
     return {
         "statusCode": 200,
         "body": {

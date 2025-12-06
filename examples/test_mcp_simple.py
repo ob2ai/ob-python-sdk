@@ -3,20 +3,22 @@
 Simple MCP test - Create trigger with proper configuration and test it.
 """
 
-import os
-import sys
-import json
-import time
 import argparse
-from datetime import datetime
+import json
+import os
 import random
 import string
+import sys
+import time
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 # Add parent directory to path for development
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from opsbeacon import OpsBeaconClient
+
 
 def generate_unique_name(prefix="simple-mcp"):
     """Generate a unique name using timestamp and random suffix."""
@@ -26,44 +28,44 @@ def generate_unique_name(prefix="simple-mcp"):
 
 def main(args):
     load_dotenv()
-    
+
     api_domain = os.getenv('OPSBEACON_API_DOMAIN', 'api.console-dev.opsbeacon.com')
     api_token = os.getenv('OPSBEACON_API_TOKEN')
-    
+
     if not api_token:
         print("Error: OPSBEACON_API_TOKEN environment variable is required")
         sys.exit(1)
-    
+
     # Enable debug mode if requested
     client = OpsBeaconClient(api_domain, api_token, debug=args.debug)
-    
+
     print("Simple MCP Test with Policy Creation")
     print("=" * 50)
-    
+
     # First create a policy for the specified command and connection
     policy_name = generate_unique_name("mcp-test-policy")
     print(f"\n1. Creating execution policy: {policy_name}")
     print(f"   This policy allows '{args.command}' command on '{args.connection}' connection")
-    
+
     policy_result = client.create_policy(
         name=policy_name,
         description=f"Policy for MCP test - allows {args.command} command on {args.connection}",
         commands=[args.command],
         connections=[args.connection]
     )
-    
+
     if 'error' in policy_result:
         print(f"   ✗ Failed to create policy: {policy_result['error']}")
         if 'details' in policy_result:
             print(f"   Details: {policy_result['details']}")
         sys.exit(1)
-    
-    print(f"   ✓ Policy created successfully!")
-    
+
+    print("   ✓ Policy created successfully!")
+
     # Create trigger with explicit configuration
     trigger_name = generate_unique_name("simple-mcp")
     print(f"\n2. Creating MCP trigger: {trigger_name}")
-    
+
     tool_instances = [
         {
             "instanceId": "disk-usage",
@@ -77,7 +79,7 @@ def main(args):
             }
         }
     ]
-    
+
     # Create with commands, connections, and policy explicitly set
     result = client.create_mcp_trigger(
         name=trigger_name,
@@ -85,30 +87,30 @@ def main(args):
         tool_instances=tool_instances,
         policies=[policy_name]  # Include the policy we just created
     )
-    
+
     if 'error' in result:
         print(f"   ✗ Failed to create trigger: {result['error']}")
         if 'details' in result:
             print(f"   Details: {result['details']}")
         sys.exit(1)
-    
-    print(f"   ✓ Created successfully!")
-    
+
+    print("   ✓ Created successfully!")
+
     mcp_url = result.get('url')
     mcp_token = result.get('apiToken')
-    
+
     if not mcp_url or not mcp_token:
-        print(f"   ✗ Missing URL or token in response")
+        print("   ✗ Missing URL or token in response")
         print(f"   Response: {json.dumps(result, indent=2)}")
         sys.exit(1)
-    
+
     print(f"   URL: {mcp_url}")
     print(f"   Token: {mcp_token}")  # Full token for AI applications
-    
+
     # Wait for propagation
     print(f"\n3. Waiting {args.wait_time} seconds for trigger to propagate...")
     time.sleep(args.wait_time)
-    
+
     # Verify trigger exists
     print("\n4. Verifying trigger exists...")
     trigger = client.get_trigger(trigger_name)
@@ -118,8 +120,8 @@ def main(args):
         print(f"   Connections: {trigger.get('connections', [])}")
         print(f"   Policies: {trigger.get('policies', [])}")
     else:
-        print(f"   ✗ Trigger not found!")
-    
+        print("   ✗ Trigger not found!")
+
     # Test MCP protocol (unless skipped)
     test_result = {'success': False}
     if args.skip_test:
@@ -128,10 +130,10 @@ def main(args):
     else:
         print("\n5. Testing MCP protocol...")
         test_result = client.test_mcp_protocol(mcp_url, mcp_token, tool_name="disk_usage")
-    
+
     if test_result.get('success'):
         print("   ✓ MCP protocol test successful!")
-        
+
         # Show execution result
         if test_result.get('execution') and 'result' in test_result['execution']:
             exec_result = test_result['execution']['result']
@@ -140,7 +142,7 @@ def main(args):
                     if content.get('type') == 'text':
                         output = content['text']
                         lines = output.split('\n')
-                        print(f"\n   Command output (first 5 lines):")
+                        print("\n   Command output (first 5 lines):")
                         for line in lines[:5]:
                             print(f"     {line}")
                         if len(lines) > 5:
@@ -148,18 +150,18 @@ def main(args):
                         break
     else:
         print("   ✗ MCP protocol test failed!")
-        
+
         # Show detailed error information
         if test_result.get('initialize', {}).get('error'):
             print(f"   Initialize error: {test_result['initialize']['error']}")
-        
+
         if test_result.get('tools'):
             if 'error' in test_result['tools']:
                 print(f"   Tools error: {test_result['tools']['error']}")
             elif 'result' in test_result['tools']:
                 tools = test_result['tools']['result'].get('tools', [])
                 print(f"   Tools found: {[t['name'] for t in tools]}")
-        
+
         if test_result.get('execution'):
             if 'error' in test_result['execution']:
                 exec_error = test_result['execution']['error']
@@ -169,22 +171,22 @@ def main(args):
                     print(f"   Execution error: {exec_error}")
             elif 'error' in test_result.get('execution', {}):
                 print(f"   Execution response error: {test_result['execution']['error']}")
-    
+
     # Clean up (unless --keep-resources is specified)
     if args.keep_resources:
         print("\n6. Keeping resources for analysis")
         print(f"   Policy: {policy_name}")
         print(f"   Trigger: {trigger_name}")
-        print(f"\n   MCP Server Credentials:")
+        print("\n   MCP Server Credentials:")
         print(f"   URL: {mcp_url}")
         print(f"   Token: {mcp_token}")
-        
+
         print("\n   To clean up manually later:")
         print(f"   client.delete_trigger('{trigger_name}')")
         print(f"   client.delete_policy('{policy_name}')")
     else:
         print("\n6. Cleaning up...")
-        
+
         # Delete trigger
         if not args.keep_trigger:
             if client.delete_trigger(trigger_name):
@@ -193,8 +195,8 @@ def main(args):
                 print(f"   ✗ Failed to delete trigger '{trigger_name}'")
         else:
             print(f"   Keeping trigger '{trigger_name}' as requested")
-        
-        # Delete policy  
+
+        # Delete policy
         if not args.keep_policy:
             if client.delete_policy(policy_name):
                 print(f"   ✓ Deleted policy '{policy_name}'")
@@ -202,7 +204,7 @@ def main(args):
                 print(f"   ✗ Failed to delete policy '{policy_name}'")
         else:
             print(f"   Keeping policy '{policy_name}' as requested")
-    
+
     print("\n" + "=" * 50)
     if test_result.get('success'):
         print("✅ Test completed successfully!")
@@ -214,7 +216,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Test MCP trigger creation with policy and protocol validation"
     )
-    
+
     # Debug options
     parser.add_argument(
         '--debug',
@@ -228,7 +230,7 @@ if __name__ == "__main__":
         help='Disable debug output (default)'
     )
     parser.set_defaults(debug=True)  # Default to debug mode for testing
-    
+
     # Resource management options
     parser.add_argument(
         '--keep-resources',
@@ -245,7 +247,7 @@ if __name__ == "__main__":
         action='store_true',
         help='Keep only the policy after test'
     )
-    
+
     # Execution options
     parser.add_argument(
         '--skip-test',
@@ -258,7 +260,7 @@ if __name__ == "__main__":
         default=3,
         help='Time to wait for trigger propagation in seconds (default: 3)'
     )
-    
+
     # Connection/command options
     parser.add_argument(
         '--connection',
@@ -270,12 +272,12 @@ if __name__ == "__main__":
         default='df',
         help='Command to execute (default: df)'
     )
-    
+
     args = parser.parse_args()
-    
+
     # Handle the wait time in the main function
     if hasattr(args, 'wait_time'):
         # Store original wait time
         original_wait = args.wait_time
-        
+
     main(args)

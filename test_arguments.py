@@ -5,8 +5,10 @@ Test script to demonstrate the new array arguments functionality in the OpsBeaco
 
 import os
 import sys
-from opsbeacon import OpsBeaconClient
+
 from dotenv import load_dotenv
+
+from opsbeacon import OpsBeaconClient
 
 # Load environment variables from .env file
 load_dotenv()

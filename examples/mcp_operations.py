@@ -10,20 +10,21 @@ This script shows how to:
 - Delete triggers
 """
 
-import os
-import sys
-import json
 import argparse
-import time
-from datetime import datetime
+import os
 import random
 import string
+import sys
+import time
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 # Add parent directory to path for development
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from opsbeacon import OpsBeaconClient
+
 
 def generate_unique_name(prefix="demo-mcp"):
     """Generate a unique name using timestamp and random suffix."""
@@ -34,25 +35,25 @@ def generate_unique_name(prefix="demo-mcp"):
 def main(args=None):
     # Load environment variables
     load_dotenv()
-    
+
     # Initialize client
     api_domain = os.getenv('OPSBEACON_API_DOMAIN', 'api.console.opsbeacon.com')
     api_token = os.getenv('OPSBEACON_API_TOKEN')
-    
+
     if not api_token:
         print("Error: OPSBEACON_API_TOKEN environment variable is required")
         sys.exit(1)
-    
+
     client = OpsBeaconClient(api_domain, api_token)
-    
+
     print("OpsBeacon MCP Trigger Operations Example")
     print("=" * 50)
-    
+
     # 1. List all triggers
     print("\n1. Listing all triggers:")
     triggers = client.triggers()
     print(f"   Found {len(triggers)} total triggers")
-    
+
     # 2. List MCP triggers specifically
     print("\n2. Listing MCP triggers:")
     mcp_triggers = client.mcp_triggers()
@@ -60,10 +61,10 @@ def main(args=None):
         print(f"   - {trigger['name']}: {trigger.get('description', 'No description')}")
         if trigger.get('triggerUrl'):
             print(f"     URL: {trigger['triggerUrl']}")
-    
+
     # 3. Create a new MCP trigger with tools
     print("\n3. Creating a new MCP trigger:")
-    
+
     # Single test tool configuration for dev environment
     # Using devcontroller connection and df command as specified
     tool_instances = [
@@ -79,18 +80,18 @@ def main(args=None):
             }
         }
     ]
-    
+
     # Generate a unique name for this test run
     new_trigger_name = generate_unique_name("demo-mcp")
     print(f"   Using unique name: {new_trigger_name}")
-    
+
     # Create the trigger with unique name
     result = client.create_mcp_trigger(
         name=new_trigger_name,
         description="Demo MCP server with system monitoring tools (auto-generated)",
         tool_instances=tool_instances
     )
-    
+
     if "error" in result:
         print(f"   Error creating trigger: {result['error']}")
         if "details" in result:
@@ -104,13 +105,13 @@ def main(args=None):
             print(f"   Warning: Unexpected response format: {result}")
             print("\nNote: Skipping remaining tests due to unexpected response")
             return
-        
+
         print(f"   ✓ Created trigger: {result.get('name', new_trigger_name)}")
-        
+
         # Small delay to allow trigger to propagate
         print("   Waiting for trigger to be available...")
         time.sleep(2)
-        
+
         # Display the MCP server URL and API token
         mcp_url = None
         mcp_token = None
@@ -121,14 +122,14 @@ def main(args=None):
             mcp_token = result['apiToken']
             print(f"   API Token: {mcp_token}")  # Full token for AI applications
             print("\n   IMPORTANT: Save these credentials! The API token is only shown once.")
-        
+
         # Also try to get URL from the trigger itself
         if not mcp_url:
             trigger_url = client.get_mcp_trigger_url(new_trigger_name)
             if trigger_url:
                 mcp_url = trigger_url
                 print(f"   MCP Server URL (from trigger): {mcp_url}")
-        
+
         # Test the MCP protocol if we have credentials
         if mcp_url and mcp_token:
             print("\n   Testing MCP Protocol with disk_usage tool...")
@@ -155,10 +156,10 @@ def main(args=None):
                     print(f"     Tools list error: {test_result['tools']['error']}")
                 if test_result.get('execution', {}).get('error'):
                     print(f"     Execution error: {test_result['execution']['error']}")
-    
+
     # 4. Add a tool to existing trigger
     print("\n4. Adding a new tool to the trigger:")
-    
+
     new_tool = {
         "name": "memory_usage",
         "description": "Check memory usage on the devcontroller server",
@@ -166,16 +167,16 @@ def main(args=None):
         "command": "free",
         "arguments": {}
     }
-    
+
     result = client.add_tool_to_mcp_trigger(new_trigger_name, new_tool)
     if "error" in result:
         print(f"   Error adding tool: {result['error']}")
     else:
-        print(f"   Successfully added tool 'memory_usage'")
+        print("   Successfully added tool 'memory_usage'")
         mcp_info = result.get('mcpTriggerInfo', {})
         tools = mcp_info.get('toolInstances', [])
         print(f"   Trigger now has {len(tools)} tools")
-    
+
     # 5. Get trigger details
     print("\n5. Getting trigger details:")
     trigger = client.get_trigger(new_trigger_name)
@@ -193,7 +194,7 @@ def main(args=None):
             print(f"     - {overrides.get('name', 'Unnamed')}: {overrides.get('description', 'No description')}")
     else:
         print(f"   Failed to get trigger details for '{new_trigger_name}'")
-    
+
     # 6. Update trigger description
     print("\n6. Updating trigger description:")
     result = client.update_mcp_trigger(
@@ -203,23 +204,23 @@ def main(args=None):
     if "error" in result:
         print(f"   Error updating trigger: {result['error']}")
     else:
-        print(f"   Successfully updated trigger description")
-    
+        print("   Successfully updated trigger description")
+
     # 7. Remove a tool from trigger
     print("\n7. Removing a tool from the trigger:")
     result = client.remove_tool_from_mcp_trigger(new_trigger_name, "memory_usage")
     if "error" in result:
         print(f"   Error removing tool: {result['error']}")
     else:
-        print(f"   Successfully removed tool 'memory_usage'")
+        print("   Successfully removed tool 'memory_usage'")
         mcp_info = result.get('mcpTriggerInfo', {})
         tools = mcp_info.get('toolInstances', [])
         print(f"   Trigger now has {len(tools)} tools")
-    
+
     # 8. Clean up - delete the demo trigger
     print("\n8. Cleaning up:")
     print(f"   Trigger name: {new_trigger_name}")
-    
+
     # Check if we should auto-delete or ask
     if hasattr(args, 'auto_delete') and args.auto_delete:
         print("   Auto-deleting trigger (--auto-delete flag set)")
@@ -241,7 +242,7 @@ def main(args=None):
                 print(f"   ✗ Failed to delete trigger '{new_trigger_name}'")
         else:
             print(f"   Keeping trigger '{new_trigger_name}'")
-    
+
     print("\n" + "=" * 50)
     print("MCP operations example completed!")
 
@@ -264,22 +265,22 @@ if __name__ == "__main__":
         action='store_true',
         help='Automatically delete the created trigger without prompting'
     )
-    
+
     args = parser.parse_args()
-    
+
     # If --list-only, just show existing triggers and exit
     if args.list_only:
         load_dotenv()
         api_domain = os.getenv('OPSBEACON_API_DOMAIN', 'api.console.opsbeacon.com')
         api_token = os.getenv('OPSBEACON_API_TOKEN')
-        
+
         if not api_token:
             print("Error: OPSBEACON_API_TOKEN environment variable is required")
             sys.exit(1)
-        
+
         client = OpsBeaconClient(api_domain, api_token)
         mcp_triggers = client.mcp_triggers()
-        
+
         print("Existing MCP Triggers:")
         print("=" * 50)
         for trigger in mcp_triggers:
@@ -287,6 +288,6 @@ if __name__ == "__main__":
             if trigger.get('triggerUrl'):
                 print(f"  URL: {trigger['triggerUrl']}")
         sys.exit(0)
-    
+
     # Otherwise run the full demo
     main(args)

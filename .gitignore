@@ -53,6 +53,15 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# Ruff
+.ruff_cache/
+
+# Coverage
+coverage.xml
+
 # Python version
 .python-version
+
+# UV
+.uv/
 
