@@ -57,7 +57,14 @@ class OpsBeaconClient:
         Fetch a list of available commands in the workspace.
 
         Returns:
-            List[Dict[str, Any]]: A list of command objects.
+            List[Dict[str, Any]]: A list of command objects containing fields like:
+                - id: Unique identifier (UUID) for the command
+                - kind: Command type (e.g., 'ssh', 'script', 'rest', 'sql', etc.)
+                - name: Human-readable command name
+                - description: Command description
+                - scriptCommandInfo: For script commands, contains 'command' (script path) and 'arguments'
+                - sshCommandInfo: For SSH commands, contains 'command' and 'arguments'
+                - And other type-specific info fields
         """
         url = f'https://{self.api_domain}/workspace/v2/commands'
         try:
@@ -67,7 +74,60 @@ class OpsBeaconClient:
         except requests.RequestException as e:
             print(f"Error fetching commands: {e}")
             return []
-    
+
+    def get_command(self, command_id: str) -> Dict[str, Any]:
+        """
+        Get details of a specific command by its ID.
+
+        Args:
+            command_id (str): The UUID of the command.
+
+        Returns:
+            Dict[str, Any]: The command details or empty dict if not found.
+        """
+        url = f'https://{self.api_domain}/workspace/v2/commands/{command_id}'
+        try:
+            self._debug_request("GET", url, self.headers)
+            response = requests.get(url, headers=self.headers)
+            self._debug_response(response)
+            response.raise_for_status()
+            result = response.json()
+            # API wraps the command in a 'command' key
+            return result.get("command", result)
+        except requests.RequestException as e:
+            print(f"Error fetching command {command_id}: {e}")
+            return {}
+
+    def update_command(self, command_id: str, command_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an existing command by its ID.
+
+        Args:
+            command_id (str): The UUID of the command to update.
+            command_data (Dict[str, Any]): The updated command data. Should include the full
+                command structure with fields like:
+                - name: Command name
+                - description: Command description
+                - kind: Command type
+                - scriptCommandInfo/sshCommandInfo/etc: Type-specific configuration
+
+        Returns:
+            Dict[str, Any]: The updated command object or error response with 'error' key.
+        """
+        url = f'https://{self.api_domain}/workspace/v2/commands/{command_id}'
+
+        try:
+            self._debug_request("PUT", url, self.headers, command_data)
+            response = requests.put(url, headers=self.headers, json=command_data)
+            self._debug_response(response)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error updating command {command_id}: {e}")
+            if hasattr(e, 'response') and e.response:
+                return {"error": str(e), "details": e.response.text}
+            return {"error": str(e)}
+
     def connections(self) -> List[Dict[str, Any]]:
         """
         Retrieve a list of connections in the workspace.
